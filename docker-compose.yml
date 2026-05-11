@@ -1,0 +1,14 @@
+services:
+  bot:
+    build: .
+    image: trip-split-bot:local
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      PORT: "8080"
+    volumes:
+      # Mount ADC credentials for local Firestore access.
+      - ${HOME:-${USERPROFILE}}/.config/gcloud:/root/.config/gcloud:ro
+    restart: unless-stopped
