@@ -129,6 +129,9 @@ class TelegramClient:
             allowed_updates=allowed_updates,
         )
 
+    async def set_my_commands(self, commands: list[dict]) -> dict:
+        return await self.call("setMyCommands", commands=commands)
+
 
 _client: TelegramClient | None = None
 

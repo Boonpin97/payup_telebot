@@ -33,6 +33,12 @@ INVALID_AMOUNT = (
 
 ADD_EXPENSE_USAGE = "Please use this format:\n/add_expense pasta 10"
 
+ASK_EXPENSE = (
+    "Send the expense details.\n\n"
+    "Format:\n<name> <amount> [@user @user ...]\n\n"
+    "E.g.\npasta 10\npasta 10 @alice @bob"
+)
+
 EMPTY_TRIP_LIST = (
     "No trips found in this group.\n\n"
     "Create one using:\n/new_trip"

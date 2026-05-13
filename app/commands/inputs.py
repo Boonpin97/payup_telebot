@@ -18,7 +18,7 @@ from ..utils.parser import (
     parse_percentage_split,
     parse_usernames,
 )
-from . import new_trip, sessions
+from . import add_expense, members, new_trip, sessions
 from .callbacks import SRC_EDIT
 from .context import CommandContext
 
@@ -32,6 +32,14 @@ async def maybe_handle(ctx: CommandContext) -> bool:
     step = session.step
     if step in (new_trip.STEP_ASK_NAME, new_trip.STEP_ASK_MEMBERS):
         await new_trip.handle_input(ctx, session)
+        return True
+
+    if step in (members.STEP_ASK_ADD_USERNAMES, members.STEP_ASK_DELETE_USERNAMES):
+        await members.handle_input(ctx, session)
+        return True
+
+    if step == add_expense.STEP_ASK_EXPENSE:
+        await add_expense.handle_input(ctx, session)
         return True
 
     expense_id = session.payload.get("expense_id", "")

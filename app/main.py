@@ -7,7 +7,8 @@ from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
-from .telegram.bot import shutdown_telegram_client
+from .telegram.bot import get_telegram_client, shutdown_telegram_client
+from .telegram.commands_meta import BOT_COMMANDS
 from .telegram.webhook import handle_update
 from .utils.logging import configure_logging, get_logger
 
@@ -18,6 +19,10 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    try:
+        await get_telegram_client().set_my_commands(BOT_COMMANDS)
+    except Exception:  # noqa: BLE001
+        logger.exception("failed to sync bot commands")
     yield
     await shutdown_telegram_client()
 
