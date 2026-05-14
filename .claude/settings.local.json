@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud config get-value project *)",
+      "Bash(gcloud firestore databases list *)",
+      "Bash(gcloud iam service-accounts list *)",
+      "Bash(gcloud artifacts repositories list *)",
+      "Bash(gcloud services enable *)"
+    ]
+  }
+}

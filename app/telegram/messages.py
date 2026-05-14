@@ -35,7 +35,6 @@ ADD_EXPENSE_USAGE = "Please use this format:\n/add_expense pasta 10"
 
 ASK_EXPENSE = (
     "Send the expense details.\n\n"
-    "Format:\n<expense name> <amount> [@<name1> @<name2> ...]\n\n"
     "E.g.\npasta 10\npasta 10 `@alice` `@bob`"
 )
 
@@ -59,7 +58,7 @@ EDIT_ASK_PEOPLE = (
 
 PARTIAL_AMOUNT_PROMPT = (
     "Enter the amount split.\n\n"
-    "Format:\n`@alice` 10.29 `@bob` 20.50"
+    "Format:\n`@alice` 25.09 `@bob` 19.97"
 )
 PARTIAL_PERCENT_PROMPT = (
     "Enter the percentage split.\n\n"
@@ -86,7 +85,7 @@ def trip_created(trip_name: str, members: Iterable[str]) -> str:
         "You can start adding expenses with:\n"
         "/add_expense pasta 10\n\n"
         "Or if you want to specify who is included in this transaction:\n"
-        "/add_expense pasta 10 @alice @bob"
+        "/add_expense pasta 10 `@alice` `@bob`"
     )
 
 
