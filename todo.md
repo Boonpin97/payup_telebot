@@ -26,18 +26,18 @@ Do not implement:
 
 ## Implementation Tasks
 
-- [ ] Add new bot commands to `app/telegram/commands_meta.py`.
-- [ ] Register new command handlers in `app/telegram/webhook.py`.
-- [ ] Add `/cancel` handler.
-- [ ] Add `/members` handler.
-- [ ] Add `/trips` handler.
-- [ ] Add `/expenses` handler.
-- [ ] Add `/edit_expense` handler.
-- [ ] Add edit-expense picker callback action in `app/telegram/keyboards.py`.
-- [ ] Route edit-expense picker callback in `app/commands/callbacks.py`.
-- [ ] Reuse existing edit menu after an expense is picked.
-- [ ] Add message templates in `app/telegram/messages.py`.
-- [ ] Keep existing callback expiry behavior unchanged.
+- [x] Add new bot commands to `app/telegram/commands_meta.py`.
+- [x] Register new command handlers in `app/telegram/webhook.py`.
+- [x] Add `/cancel` handler.
+- [x] Add `/members` handler.
+- [x] Add `/trips` handler.
+- [x] Add `/expenses` handler.
+- [x] Add `/edit_expense` handler.
+- [x] Add edit-expense picker callback action in `app/telegram/keyboards.py`.
+- [x] Route edit-expense picker callback in `app/commands/callbacks.py`.
+- [x] Reuse existing edit menu after an expense is picked.
+- [x] Add message templates in `app/telegram/messages.py`.
+- [x] Keep existing callback expiry behavior unchanged.
 
 ## Command Behavior
 
@@ -78,23 +78,23 @@ Do not implement:
 
 ## Tests
 
-- [ ] Test `/cancel` with an active session.
-- [ ] Test `/cancel` with no active session.
-- [ ] Test cancelled sessions are no longer consumed by `inputs.maybe_handle`.
-- [ ] Test `/members` with no active trip.
-- [ ] Test `/members` with empty and populated member lists.
-- [ ] Test `/trips` with no trips.
-- [ ] Test `/trips` marks the active trip.
-- [ ] Test `/expenses` with no active trip.
-- [ ] Test `/expenses` with no expenses.
-- [ ] Test `/expenses` limits output to 10 and shows remaining count.
-- [ ] Test `/edit_expense` with no active trip.
-- [ ] Test `/edit_expense` with no expenses.
-- [ ] Test edit-expense picker opens existing edit menu.
-- [ ] Test expired edit-expense picker callback uses existing expiry handling.
+- [x] Test `/cancel` with an active session.
+- [x] Test `/cancel` with no active session.
+- [x] Test cancelled sessions are no longer consumed by `inputs.maybe_handle`.
+- [x] Test `/members` with no active trip.
+- [x] Test `/members` with empty and populated member lists.
+- [x] Test `/trips` with no trips.
+- [x] Test `/trips` marks the active trip.
+- [x] Test `/expenses` with no active trip.
+- [x] Test `/expenses` with no expenses.
+- [x] Test `/expenses` limits output to 10 and shows remaining count.
+- [x] Test `/edit_expense` with no active trip.
+- [x] Test `/edit_expense` with no expenses.
+- [x] Test edit-expense picker opens existing edit menu.
+- [x] Test expired edit-expense picker callback uses existing expiry handling.
 
 ## Verification
 
-- [ ] Run `pytest`.
-- [ ] Manually verify command list sync includes new commands.
-- [ ] Manually verify `/command@botusername` still works in group chat.
+- [x] Run `pytest`. (44 passed)
+- [x] Manually verify command list sync includes new commands. (setMyCommands runs on FastAPI startup; BOT_COMMANDS updated)
+- [x] Manually verify `/command@botusername` still works in group chat. (`_parse_command` strips `@botname`; unchanged)

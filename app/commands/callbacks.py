@@ -59,6 +59,7 @@ async def handle(ctx: CallbackContext, message_date_unix: int) -> None:
         keyboards.SPLIT_AMOUNT: _on_split_amount,
         keyboards.SPLIT_PERCENT: _on_split_percent,
         keyboards.DELETE_PAYMENT_PICK: _on_delete_payment_pick,
+        keyboards.EDIT_EXPENSE_PICK: _on_edit_expense_pick,
         keyboards.SWITCH_TRIP_PICK: _on_switch_trip_pick,
         keyboards.DELETE_TRIP_PICK: _on_delete_trip_pick,
         keyboards.DELETE_TRIP_CONFIRM: _on_delete_trip_confirm,
@@ -238,6 +239,27 @@ async def _on_delete_payment_pick(ctx: CallbackContext, expense_id: str) -> None
     await ctx.client.send_message(
         ctx.chat_id,
         f"Expense deleted: {expense.expense_name} - {fmt(expense.amount)}",
+    )
+
+
+async def _on_edit_expense_pick(ctx: CallbackContext, expense_id: str) -> None:
+    trip = await trip_service.get_active_trip(ctx.chat_id)
+    if trip is None:
+        await ctx.client.answer_callback_query(
+            ctx.callback_query_id, text=messages.NO_ACTIVE_TRIP, show_alert=True
+        )
+        return
+    expense = await expense_repository.get(ctx.chat_id, trip.trip_id, expense_id)
+    if expense is None or expense.is_deleted:
+        await ctx.client.answer_callback_query(
+            ctx.callback_query_id, text="Expense no longer exists.", show_alert=True
+        )
+        return
+    await ctx.client.answer_callback_query(ctx.callback_query_id)
+    await ctx.client.send_message(
+        ctx.chat_id,
+        messages.EDIT_MENU_PROMPT,
+        reply_markup=keyboards.edit_menu(expense_id),
     )
 
 

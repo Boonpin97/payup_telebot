@@ -67,6 +67,51 @@ PARTIAL_PERCENT_PROMPT = (
 
 EDIT_MENU_PROMPT = "What else would you like to edit?"
 
+CANCEL_DONE = "Cancelled."
+CANCEL_NOTHING = "There is no active action to cancel."
+
+NO_EXPENSES = "No expenses recorded in this trip yet."
+PICK_EXPENSE_TO_EDIT = "Select an expense to edit:"
+
+
+def members_list(trip_name: str, members: list[str]) -> str:
+    member_lines = "\n".join(display_username(m) for m in members) or "(none)"
+    return (
+        f"Members in {trip_name}:\n"
+        f"{member_lines}"
+    )
+
+
+def trips_list(items: list[tuple[str, bool]]) -> str:
+    """Render a list of trips with the active one marked.
+
+    ``items`` is a list of ``(trip_name, is_active)`` tuples.
+    """
+    lines = [
+        f"{name} (active)" if is_active else name
+        for name, is_active in items
+    ]
+    return "Trips:\n" + "\n".join(lines)
+
+
+def expenses_list(
+    items: list[tuple[str, Decimal, str]],
+    remaining: int,
+) -> str:
+    """Render the most recent expenses.
+
+    ``items`` is a list of ``(expense_name, amount, payer_username)`` tuples.
+    ``remaining`` is the count of older expenses not shown.
+    """
+    lines = [
+        f"{name} - {fmt(amount)} (paid by {display_username(payer)})"
+        for name, amount, payer in items
+    ]
+    body = "Recent expenses:\n" + "\n".join(lines)
+    if remaining > 0:
+        body += f"\n\n...and {remaining} more"
+    return body
+
 
 def unknown_member(username: str) -> str:
     return (

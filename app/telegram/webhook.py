@@ -10,13 +10,18 @@ from typing import Optional
 from ..commands import (
     add_expense,
     callbacks,
+    cancel,
     delete_payment,
     delete_trip,
+    edit_expense,
+    expenses_view,
     inputs,
     members,
+    members_view,
     new_trip,
     summary,
     switch_trip,
+    trips_view,
 )
 from ..commands.context import CallbackContext, CommandContext
 from ..utils.logging import get_logger
@@ -88,12 +93,17 @@ async def _start_handler(ctx: CommandContext) -> None:
 COMMAND_HANDLERS = {
     "new_trip": new_trip.handle,
     "add_expense": add_expense.handle,
+    "edit_expense": edit_expense.handle,
+    "expenses": expenses_view.handle,
     "summary": summary.handle,
     "delete_payment": delete_payment.handle,
+    "members": members_view.handle,
     "add_members": members.add,
     "delete_members": members.delete,
+    "trips": trips_view.handle,
     "switch_trip": switch_trip.handle,
     "delete_trip": delete_trip.handle,
+    "cancel": cancel.handle,
     "start": _start_handler,
     "help": _start_handler,
 }

@@ -24,6 +24,7 @@ SPLIT_AMOUNT = "split_amount"
 SPLIT_PERCENT = "split_percent"
 
 DELETE_PAYMENT_PICK = "delpay"      # delpay:<expense_id>
+EDIT_EXPENSE_PICK = "editexp"        # editexp:<expense_id>
 SWITCH_TRIP_PICK = "switch"          # switch:<trip_id>
 DELETE_TRIP_PICK = "deltrip"         # deltrip:<trip_id>
 DELETE_TRIP_CONFIRM = "deltrip_yes"  # deltrip_yes:<trip_id>
@@ -79,6 +80,18 @@ def expense_pick_keyboard(items: Iterable[tuple[str, str]]) -> dict:
     """
     rows = [
         [{"text": label, "callback_data": f"{DELETE_PAYMENT_PICK}:{expense_id}"}]
+        for label, expense_id in items
+    ]
+    return {"inline_keyboard": rows}
+
+
+def edit_expense_pick_keyboard(items: Iterable[tuple[str, str]]) -> dict:
+    """Build a vertical list of buttons for /edit_expense.
+
+    ``items`` is an iterable of ``(label, expense_id)`` tuples.
+    """
+    rows = [
+        [{"text": label, "callback_data": f"{EDIT_EXPENSE_PICK}:{expense_id}"}]
         for label, expense_id in items
     ]
     return {"inline_keyboard": rows}
