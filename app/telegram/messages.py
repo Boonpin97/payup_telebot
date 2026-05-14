@@ -19,7 +19,7 @@ ASK_TRIP_NAME = "What is the name of this trip?"
 
 ASK_TRIP_MEMBERS = (
     "Who will be included in this trip?\n\n"
-    "E.g.\n@alice @bob @charlie"
+    "E.g.\n@<name1> @<name2> @<name3>"
 )
 
 NO_ACTIVE_TRIP = (
@@ -35,8 +35,8 @@ ADD_EXPENSE_USAGE = "Please use this format:\n/add_expense pasta 10"
 
 ASK_EXPENSE = (
     "Send the expense details.\n\n"
-    "Format:\n<name> <amount> [@user @user ...]\n\n"
-    "E.g.\npasta 10\npasta 10 @alice @bob"
+    "Format:\n<expense name> <amount> [@<name1> @<name2> ...]\n\n"
+    "E.g.\npasta 10\npasta 10 @<name1> @<name2>"
 )
 
 EMPTY_TRIP_LIST = (
@@ -54,16 +54,16 @@ EDIT_ASK_NAME = "Please enter the new expense name."
 EDIT_ASK_AMOUNT = "Please enter the new amount."
 EDIT_ASK_PEOPLE = (
     "Please enter the people involved in this expense.\n\n"
-    "Example:\n@user1 @user2"
+    "Example:\n@<name1> @<name2>"
 )
 
 PARTIAL_AMOUNT_PROMPT = (
     "Enter the amount split.\n\n"
-    "Format:\n@user1 10.29 @user2 20.50"
+    "Format:\n@<name1> 10.29 @<name2> 20.50"
 )
 PARTIAL_PERCENT_PROMPT = (
     "Enter the percentage split.\n\n"
-    "Format:\n@user1 40 @user2 60"
+    "Format:\n@<name1> 40 @<name2> 60"
 )
 
 EDIT_MENU_PROMPT = "What else would you like to edit?"
@@ -86,7 +86,7 @@ def trip_created(trip_name: str, members: Iterable[str]) -> str:
         "You can start adding expenses with:\n"
         "/add_expense pasta 10\n\n"
         "Or if you want to specify who is included in this transaction:\n"
-        "/add_expense pasta 10 @alice @bob"
+        "/add_expense pasta 10 @<name1> @<name2>"
     )
 
 

@@ -17,11 +17,11 @@ STEP_ASK_DELETE_USERNAMES = "ask_delete_usernames"
 
 ASK_ADD_USERNAMES = (
     "Who would you like to add to this trip?\n\n"
-    "E.g.\n@alice @bob"
+    "E.g.\n@<name1> @<name2>"
 )
 ASK_DELETE_USERNAMES = (
     "Who would you like to remove from this trip?\n\n"
-    "E.g.\n@alice"
+    "E.g.\n@<name>"
 )
 
 
