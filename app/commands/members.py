@@ -17,11 +17,11 @@ STEP_ASK_DELETE_USERNAMES = "ask_delete_usernames"
 
 ASK_ADD_USERNAMES = (
     "Who would you like to add to this trip?\n\n"
-    "E.g.\n@<name1> @<name2>"
+    "E.g.\n`@alice` `@bob`"
 )
 ASK_DELETE_USERNAMES = (
     "Who would you like to remove from this trip?\n\n"
-    "E.g.\n@<name>"
+    "E.g.\n`@alice`"
 )
 
 
@@ -39,7 +39,9 @@ async def add(ctx: CommandContext) -> None:
             step=STEP_ASK_ADD_USERNAMES,
             user_id=ctx.user_id,
         )
-        await ctx.client.send_message(ctx.chat_id, ASK_ADD_USERNAMES)
+        await ctx.client.send_message(
+            ctx.chat_id, ASK_ADD_USERNAMES, parse_mode="Markdown"
+        )
         return
 
     await _apply_add(ctx, trip, usernames)
@@ -59,7 +61,9 @@ async def delete(ctx: CommandContext) -> None:
             step=STEP_ASK_DELETE_USERNAMES,
             user_id=ctx.user_id,
         )
-        await ctx.client.send_message(ctx.chat_id, ASK_DELETE_USERNAMES)
+        await ctx.client.send_message(
+            ctx.chat_id, ASK_DELETE_USERNAMES, parse_mode="Markdown"
+        )
         return
 
     await _apply_delete(ctx, trip, usernames)
@@ -73,7 +77,7 @@ async def handle_input(ctx: CommandContext, session) -> None:
             if session.step == STEP_ASK_ADD_USERNAMES
             else ASK_DELETE_USERNAMES
         )
-        await ctx.client.send_message(ctx.chat_id, prompt)
+        await ctx.client.send_message(ctx.chat_id, prompt, parse_mode="Markdown")
         return
 
     trip = await trip_service.get_active_trip(ctx.chat_id)

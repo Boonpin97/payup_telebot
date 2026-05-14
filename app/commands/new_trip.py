@@ -40,7 +40,9 @@ async def handle_input(ctx: CommandContext, session) -> None:
             payload={"trip_name": text},
             user_id=ctx.user_id,
         )
-        await ctx.client.send_message(ctx.chat_id, messages.ASK_TRIP_MEMBERS)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.ASK_TRIP_MEMBERS, parse_mode="Markdown"
+        )
         return
 
     if session.step == STEP_ASK_MEMBERS:

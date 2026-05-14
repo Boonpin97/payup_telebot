@@ -115,6 +115,7 @@ async def _start_text_input(
     kind: str,
     prompt: str,
     source: str = SRC_EDIT,
+    parse_mode: str | None = None,
 ) -> None:
     await sessions.start_input(
         chat_id=ctx.chat_id,
@@ -124,7 +125,7 @@ async def _start_text_input(
         user_id=ctx.user_id,
         callback_message_id=ctx.message_id,
     )
-    await ctx.client.send_message(ctx.chat_id, prompt)
+    await ctx.client.send_message(ctx.chat_id, prompt, parse_mode=parse_mode)
 
 
 async def _on_edit_name(ctx: CallbackContext, expense_id: str) -> None:
@@ -144,7 +145,11 @@ async def _on_edit_amount(ctx: CallbackContext, expense_id: str) -> None:
 async def _on_edit_people(ctx: CallbackContext, expense_id: str) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
     await _start_text_input(
-        ctx, expense_id=expense_id, kind="edit_people", prompt=messages.EDIT_ASK_PEOPLE
+        ctx,
+        expense_id=expense_id,
+        kind="edit_people",
+        prompt=messages.EDIT_ASK_PEOPLE,
+        parse_mode="Markdown",
     )
 
 
@@ -196,6 +201,7 @@ async def _on_split_amount(ctx: CallbackContext, expense_id: str) -> None:
         kind="split_amount",
         prompt=messages.PARTIAL_AMOUNT_PROMPT,
         source=SRC_DIRECT,
+        parse_mode="Markdown",
     )
 
 
@@ -207,6 +213,7 @@ async def _on_split_percent(ctx: CallbackContext, expense_id: str) -> None:
         kind="split_percent",
         prompt=messages.PARTIAL_PERCENT_PROMPT,
         source=SRC_DIRECT,
+        parse_mode="Markdown",
     )
 
 

@@ -122,7 +122,9 @@ async def _handle_edit_amount(ctx: CommandContext, expense_id: str, source: str)
 async def _handle_edit_people(ctx: CommandContext, expense_id: str, source: str) -> None:
     usernames = parse_usernames(ctx.raw_text)
     if not usernames:
-        await ctx.client.send_message(ctx.chat_id, messages.EDIT_ASK_PEOPLE)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.EDIT_ASK_PEOPLE, parse_mode="Markdown"
+        )
         return
     trip, expense = await _get_expense(ctx, expense_id)
     if not expense:
@@ -142,7 +144,9 @@ async def _handle_split_amount(ctx: CommandContext, expense_id: str, source: str
     try:
         pairs = parse_amount_split(ctx.raw_text)
     except ValueError:
-        await ctx.client.send_message(ctx.chat_id, messages.PARTIAL_AMOUNT_PROMPT)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.PARTIAL_AMOUNT_PROMPT, parse_mode="Markdown"
+        )
         return
     trip, expense = await _get_expense(ctx, expense_id)
     if not expense:
@@ -169,7 +173,9 @@ async def _handle_split_percent(ctx: CommandContext, expense_id: str, source: st
     try:
         pairs = parse_percentage_split(ctx.raw_text)
     except ValueError:
-        await ctx.client.send_message(ctx.chat_id, messages.PARTIAL_PERCENT_PROMPT)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.PARTIAL_PERCENT_PROMPT, parse_mode="Markdown"
+        )
         return
     trip, expense = await _get_expense(ctx, expense_id)
     if not expense:

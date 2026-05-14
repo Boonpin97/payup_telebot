@@ -38,7 +38,9 @@ async def handle(ctx: CommandContext) -> None:
             step=STEP_ASK_EXPENSE,
             user_id=ctx.user_id,
         )
-        await ctx.client.send_message(ctx.chat_id, messages.ASK_EXPENSE)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.ASK_EXPENSE, parse_mode="Markdown"
+        )
         return
 
     await _create_from_args(ctx, trip, ctx.args_text)
@@ -58,7 +60,9 @@ async def handle_input(ctx: CommandContext, session) -> None:
 
     text = ctx.raw_text.strip()
     if not text:
-        await ctx.client.send_message(ctx.chat_id, messages.ASK_EXPENSE)
+        await ctx.client.send_message(
+            ctx.chat_id, messages.ASK_EXPENSE, parse_mode="Markdown"
+        )
         return
 
     await sessions.end_input(ctx.chat_id)
