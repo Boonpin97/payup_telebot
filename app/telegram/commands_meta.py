@@ -11,6 +11,8 @@ BOT_COMMANDS: list[dict[str, str]] = [
     {"command": "edit_expense", "description": "Edit an existing expense"},
     {"command": "expenses", "description": "List recent expenses"},
     {"command": "summary", "description": "Show totals, balances and settlement"},
+    {"command": "list_expenses", "description": "List all expenses in the active trip"},
+    {"command": "settle", "description": "Record a payment between two members"},
     {"command": "delete_payment", "description": "Delete an expense"},
     {"command": "members", "description": "Show members of the active trip"},
     {"command": "add_members", "description": "Add @usernames to the active trip"},

@@ -27,6 +27,7 @@ class Expense(BaseModel):
     created_by_username: str
     created_at: datetime = Field(default_factory=utcnow)
     updated_at: datetime = Field(default_factory=utcnow)
+    is_settlement: bool = False
     is_deleted: bool = False
     deleted_at: Optional[datetime] = None
 

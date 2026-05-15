@@ -119,6 +119,18 @@ def parse_percentage_split(raw: str) -> list[UserPercent]:
     return [UserPercent(username=u, percent=v) for u, v in pairs]
 
 
+def parse_settle(args_text: str) -> tuple[str, Decimal]:
+    """Parse ``/settle @username amount`` → ``(username, amount)``."""
+    tokens = args_text.strip().split()
+    if len(tokens) < 2:
+        raise ValueError("expected '@username amount'")
+    username = normalize_username(tokens[0])
+    if not username:
+        raise ValueError(f"invalid username: {tokens[0]}")
+    amount = parse_money(tokens[1])
+    return username, amount
+
+
 def _parse_user_value_pairs(
     raw: str,
     value_parser: Callable[[str], Decimal],

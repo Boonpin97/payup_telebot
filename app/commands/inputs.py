@@ -25,8 +25,10 @@ from .context import CommandContext
 
 async def maybe_handle(ctx: CommandContext) -> bool:
     """Return ``True`` if the text was consumed by a pending session."""
-    session = await sessions.get_alive_input(ctx.chat_id)
+    session, expired = await sessions.get_alive_input(ctx.chat_id, ctx.user_id)
     if session is None:
+        if expired:
+            await ctx.client.send_message(ctx.chat_id, messages.SESSION_EXPIRED)
         return False
 
     step = session.step
@@ -44,7 +46,7 @@ async def maybe_handle(ctx: CommandContext) -> bool:
 
     expense_id = session.payload.get("expense_id", "")
     if not expense_id:
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         return True
 
     handlers = {
@@ -56,7 +58,7 @@ async def maybe_handle(ctx: CommandContext) -> bool:
     }
     handler = handlers.get(step)
     if handler is None:
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         return True
 
     await handler(ctx, expense_id, session.payload.get("source", SRC_EDIT))
@@ -67,12 +69,12 @@ async def _get_expense(ctx: CommandContext, expense_id: str):
     trip = await trip_service.get_active_trip(ctx.chat_id)
     if trip is None:
         await ctx.client.send_message(ctx.chat_id, messages.NO_ACTIVE_TRIP)
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         return None, None
     expense = await expense_repository.get(ctx.chat_id, trip.trip_id, expense_id)
     if expense is None or expense.is_deleted:
         await ctx.client.send_message(ctx.chat_id, "Expense no longer exists.")
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         return None, None
     return trip, expense
 
@@ -99,7 +101,7 @@ async def _handle_edit_name(ctx: CommandContext, expense_id: str, source: str) -
     expense.expense_name = new_name
     splits = await expense_repository.list_splits(ctx.chat_id, trip.trip_id, expense_id)
     await expense_repository.replace_splits(ctx.chat_id, trip.trip_id, expense, splits)
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, expense_id, source)
 
 
@@ -115,7 +117,7 @@ async def _handle_edit_amount(ctx: CommandContext, expense_id: str, source: str)
     expense.amount = new_amount
     # Recalculate as equal split when the amount changes.
     await expense_service.replace_split_equal(ctx.chat_id, trip.trip_id, expense)
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, expense_id, source)
 
 
@@ -136,7 +138,7 @@ async def _handle_edit_people(ctx: CommandContext, expense_id: str, source: str)
             return
     expense.participant_usernames = usernames
     await expense_service.replace_split_equal(ctx.chat_id, trip.trip_id, expense)
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, expense_id, source)
 
 
@@ -165,7 +167,7 @@ async def _handle_split_amount(ctx: CommandContext, expense_id: str, source: str
             return
         await ctx.client.send_message(ctx.chat_id, str(exc))
         return
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, expense_id, source)
 
 
@@ -194,5 +196,5 @@ async def _handle_split_percent(ctx: CommandContext, expense_id: str, source: st
             return
         await ctx.client.send_message(ctx.chat_id, str(exc))
         return
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, expense_id, source)

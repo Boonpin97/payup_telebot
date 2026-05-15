@@ -7,7 +7,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Iterable
 
-from ..utils.money import fmt
+from ..utils.money import ZERO, fmt, quantize
 from ..utils.parser import display_username
 
 GREETING = (
@@ -282,6 +282,52 @@ def confirm_delete_trip_text(trip_name: str) -> str:
 
 def trip_deleted(trip_name: str) -> str:
     return f"Trip deleted: {trip_name}"
+
+
+SETTLE_USAGE = (
+    "Please use this format:\n"
+    "/settle `@username` amount\n\n"
+    "Example:\n"
+    "/settle `@bob` 50.00"
+)
+
+SETTLE_SELF_ERROR = "You cannot settle with yourself."
+
+NO_EXPENSES_IN_TRIP = (
+    "No expenses in this trip yet.\n\n"
+    "Add one with:\n/add_expense"
+)
+
+
+def settlement_recorded(payer: str, recipient: str, amount: Decimal) -> str:
+    return (
+        f"Settlement recorded.\n"
+        f"{display_username(payer)} paid {display_username(recipient)} {fmt(amount)}"
+    )
+
+
+def expense_list(trip_name: str, expenses: list) -> str:
+    if not expenses:
+        return NO_EXPENSES_IN_TRIP
+
+    lines = [f"Expenses in {trip_name}:\n"]
+    total = ZERO
+    for i, e in enumerate(expenses, 1):
+        if e.is_settlement:
+            recipient = e.participant_usernames[0] if e.participant_usernames else "?"
+            lines.append(
+                f"{i}. [Settlement] {display_username(e.paid_by_username)} → "
+                f"{display_username(recipient)} — {fmt(e.amount)}"
+            )
+        else:
+            lines.append(
+                f"{i}. {e.expense_name} — {fmt(e.amount)} "
+                f"(paid by {display_username(e.paid_by_username)})"
+            )
+            total += e.amount
+
+    lines.append(f"\nTotal spent: {fmt(quantize(total))}")
+    return "\n".join(lines)
 
 
 def equal_split_done(per_person: Decimal) -> str:

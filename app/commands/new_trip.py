@@ -48,7 +48,7 @@ async def handle_input(ctx: CommandContext, session) -> None:
     if session.step == STEP_ASK_MEMBERS:
         usernames = parse_usernames(text)
         trip_name = session.payload.get("trip_name", "Untitled trip")
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         trip = await trip_service.create_trip(
             chat_id=ctx.chat_id,
             chat_title=ctx.chat_title,

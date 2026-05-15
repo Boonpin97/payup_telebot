@@ -43,15 +43,19 @@ async def create(
     return sess
 
 
-async def get_if_alive(session_id: str) -> Optional[Session]:
+async def get_if_alive(session_id: str) -> tuple[Optional[Session], bool]:
+    """Return ``(session, expired)``.
+
+    ``session`` is non-None only when the session is alive.
+    ``expired`` is True when the document existed but the TTL had passed.
+    """
     sess = await session_repository.get(session_id)
     if sess is None:
-        return None
+        return None, False
     if is_expired(sess.expires_at):
-        # Best effort cleanup; if it fails, GC can handle it later.
         await session_repository.delete(session_id)
-        return None
-    return sess
+        return None, True
+    return sess, False
 
 
 async def update(sess: Session, *, step: Optional[str] = None, payload: Optional[dict[str, Any]] = None) -> Session:

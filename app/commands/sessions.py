@@ -19,8 +19,8 @@ from ..services import session_service
 INPUT = "input"
 
 
-def chat_input_session_id(chat_id: int) -> str:
-    return f"chat:{chat_id}:{INPUT}"
+def chat_input_session_id(chat_id: int, user_id: Optional[int]) -> str:
+    return f"chat:{chat_id}:user:{user_id or 0}:{INPUT}"
 
 
 async def start_input(
@@ -33,7 +33,7 @@ async def start_input(
     callback_message_id: Optional[int] = None,
 ) -> Session:
     return await session_service.create(
-        session_id=chat_input_session_id(chat_id),
+        session_id=chat_input_session_id(chat_id, user_id),
         chat_id=chat_id,
         group_id=group_repository.group_id_for_chat(chat_id),
         command_name=command_name,
@@ -44,9 +44,10 @@ async def start_input(
     )
 
 
-async def get_alive_input(chat_id: int) -> Optional[Session]:
-    return await session_service.get_if_alive(chat_input_session_id(chat_id))
+async def get_alive_input(chat_id: int, user_id: Optional[int]) -> tuple[Optional[Session], bool]:
+    """Return ``(session, expired)`` — see :func:`session_service.get_if_alive`."""
+    return await session_service.get_if_alive(chat_input_session_id(chat_id, user_id))
 
 
-async def end_input(chat_id: int) -> None:
-    await session_service.end(chat_input_session_id(chat_id))
+async def end_input(chat_id: int, user_id: Optional[int]) -> None:
+    await session_service.end(chat_input_session_id(chat_id, user_id))

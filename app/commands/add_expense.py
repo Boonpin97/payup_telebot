@@ -48,13 +48,13 @@ async def handle(ctx: CommandContext) -> None:
 
 async def handle_input(ctx: CommandContext, session) -> None:
     if not ctx.username:
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         await ctx.client.send_message(ctx.chat_id, _NO_USERNAME_MSG)
         return
 
     trip = await trip_service.get_active_trip(ctx.chat_id)
     if trip is None:
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         await ctx.client.send_message(ctx.chat_id, messages.NO_ACTIVE_TRIP)
         return
 
@@ -65,7 +65,7 @@ async def handle_input(ctx: CommandContext, session) -> None:
         )
         return
 
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _create_from_args(ctx, trip, text)
 
 

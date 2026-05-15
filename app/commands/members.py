@@ -82,11 +82,11 @@ async def handle_input(ctx: CommandContext, session) -> None:
 
     trip = await trip_service.get_active_trip(ctx.chat_id)
     if trip is None:
-        await sessions.end_input(ctx.chat_id)
+        await sessions.end_input(ctx.chat_id, ctx.user_id)
         await ctx.client.send_message(ctx.chat_id, messages.NO_ACTIVE_TRIP)
         return
 
-    await sessions.end_input(ctx.chat_id)
+    await sessions.end_input(ctx.chat_id, ctx.user_id)
     if session.step == STEP_ASK_ADD_USERNAMES:
         await _apply_add(ctx, trip, usernames)
     else:

@@ -201,6 +201,56 @@ async def replace_split_percentages(
     return splits
 
 
+async def add_settlement(
+    *,
+    chat_id: int,
+    trip_id: str,
+    group_id: str,
+    payer_user_id: Optional[int],
+    payer_username: str,
+    recipient_username: str,
+    amount: Decimal,
+) -> Expense:
+    """Record that payer paid recipient outside the app.
+
+    Stored as a special expense (``is_settlement=True``) so the balance math
+    works without a separate data model: paid_by[payer] and owed_by[recipient]
+    both go up by ``amount``, reducing the net debt between them.
+    """
+    active_members = await member_repository.list_active(chat_id, trip_id)
+    active_set = {m.username for m in active_members}
+    member_id_map = {m.username: m.telegram_user_id for m in active_members}
+
+    for u in (payer_username, recipient_username):
+        if u not in active_set:
+            raise ExpenseError(u)
+
+    expense = Expense(
+        expense_id=expense_repository.new_expense_id(),
+        trip_id=trip_id,
+        group_id=group_id,
+        expense_name="Settlement",
+        amount=quantize(amount),
+        currency=get_settings().default_currency,
+        paid_by_user_id=payer_user_id,
+        paid_by_username=payer_username,
+        participant_usernames=[recipient_username],
+        split_type="equal",
+        is_settlement=True,
+        created_by_user_id=payer_user_id,
+        created_by_username=payer_username,
+    )
+    split = ExpenseSplit(
+        split_id=recipient_username,
+        expense_id=expense.expense_id,
+        username=recipient_username,
+        telegram_user_id=member_id_map.get(recipient_username),
+        amount_owed=quantize(amount),
+    )
+    await expense_repository.create_with_splits(chat_id, trip_id, expense, [split])
+    return expense
+
+
 async def delete_expense(chat_id: int, trip_id: str, expense_id: str) -> None:
     await expense_repository.soft_delete(chat_id, trip_id, expense_id)
 
@@ -228,7 +278,8 @@ async def compute_summary(chat_id: int, trip_id: str) -> TripSummary:
     total = ZERO
 
     for e in expenses:
-        total += e.amount
+        if not e.is_settlement:
+            total += e.amount
         paid_by[e.paid_by_username] = paid_by.get(e.paid_by_username, ZERO) + e.amount
         splits = await expense_repository.list_splits(chat_id, trip_id, e.expense_id)
         for s in splits:
