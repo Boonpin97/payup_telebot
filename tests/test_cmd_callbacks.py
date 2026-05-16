@@ -285,6 +285,14 @@ async def test_edit_name_starts_session_with_edit_name_step():
 
     assert captured[0]["step"] == "edit_name"
     assert captured[0]["payload"]["expense_id"] == EXPENSE_ID
+    assert captured[0]["callback_message_id"] == ctx.message_id
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.EDIT_ASK_NAME,
+        reply_markup=None,
+        parse_mode=None,
+    )
 
 
 async def test_edit_amount_starts_session_with_edit_amount_step():
@@ -299,6 +307,14 @@ async def test_edit_amount_starts_session_with_edit_amount_step():
         await callbacks.handle(ctx, _recent_unix())
 
     assert captured[0]["step"] == "edit_amount"
+    assert captured[0]["callback_message_id"] == ctx.message_id
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.EDIT_ASK_AMOUNT,
+        reply_markup=None,
+        parse_mode=None,
+    )
 
 
 async def test_edit_people_starts_session_with_edit_people_step():
@@ -313,6 +329,14 @@ async def test_edit_people_starts_session_with_edit_people_step():
         await callbacks.handle(ctx, _recent_unix())
 
     assert captured[0]["step"] == "edit_people"
+    assert captured[0]["callback_message_id"] == ctx.message_id
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.EDIT_ASK_PEOPLE,
+        reply_markup=None,
+        parse_mode="Markdown",
+    )
 
 
 async def test_split_amount_starts_session_with_src_direct():
@@ -327,6 +351,13 @@ async def test_split_amount_starts_session_with_src_direct():
         await callbacks.handle(ctx, _recent_unix())
 
     assert captured[0]["payload"]["source"] == SRC_DIRECT
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.PARTIAL_AMOUNT_PROMPT,
+        reply_markup=None,
+        parse_mode="Markdown",
+    )
 
 
 async def test_split_percent_starts_session_with_src_direct():
@@ -341,6 +372,13 @@ async def test_split_percent_starts_session_with_src_direct():
         await callbacks.handle(ctx, _recent_unix())
 
     assert captured[0]["payload"]["source"] == SRC_DIRECT
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.PARTIAL_PERCENT_PROMPT,
+        reply_markup=None,
+        parse_mode="Markdown",
+    )
 
 
 # ---------------------------------------------------------------------------

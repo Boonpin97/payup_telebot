@@ -18,6 +18,28 @@ SRC_EDIT = "edit"
 SRC_DIRECT = "direct"
 
 
+def _edit_menu_text(*, updated: bool = False) -> str:
+    if updated:
+        return f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}"
+    return messages.EDIT_MENU_PROMPT
+
+
+async def _edit_wizard_message(
+    ctx: CallbackContext,
+    *,
+    text: str,
+    reply_markup: dict | None = None,
+    parse_mode: str | None = None,
+) -> None:
+    await ctx.client.edit_message_text(
+        ctx.chat_id,
+        ctx.message_id,
+        text,
+        reply_markup=reply_markup,
+        parse_mode=parse_mode,
+    )
+
+
 def _is_message_expired(callback_message_date_unix: int, *, ttl: int = 180) -> bool:
     msg_dt = datetime.fromtimestamp(callback_message_date_unix, tz=timezone.utc)
     return (utcnow() - msg_dt).total_seconds() > ttl
@@ -101,8 +123,8 @@ async def _on_expense_delete(ctx: CallbackContext, expense_id: str) -> None:
 
 async def _on_expense_partial(ctx: CallbackContext, expense_id: str) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
-    await ctx.client.send_message(
-        ctx.chat_id,
+    await _edit_wizard_message(
+        ctx,
         "Choose a split type:",
         reply_markup=keyboards.partial_split_menu(expense_id),
     )
@@ -128,7 +150,7 @@ async def _start_text_input(
         user_id=ctx.user_id,
         callback_message_id=ctx.message_id,
     )
-    await ctx.client.send_message(ctx.chat_id, prompt, parse_mode=parse_mode)
+    await _edit_wizard_message(ctx, text=prompt, parse_mode=parse_mode)
 
 
 async def _on_edit_name(ctx: CallbackContext, expense_id: str) -> None:
@@ -158,8 +180,8 @@ async def _on_edit_people(ctx: CallbackContext, expense_id: str) -> None:
 
 async def _on_edit_partial(ctx: CallbackContext, expense_id: str) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
-    await ctx.client.send_message(
-        ctx.chat_id,
+    await _edit_wizard_message(
+        ctx,
         "Choose a split type:",
         reply_markup=keyboards.partial_split_menu(expense_id),
     )
@@ -168,7 +190,7 @@ async def _on_edit_partial(ctx: CallbackContext, expense_id: str) -> None:
 async def _on_edit_done(ctx: CallbackContext, expense_id: str) -> None:
     trip = await trip_service.get_active_trip(ctx.chat_id)
     await ctx.client.answer_callback_query(ctx.callback_query_id)
-    await ctx.client.send_message(ctx.chat_id, messages.EXPENSE_UPDATED)
+    await _edit_wizard_message(ctx, text=messages.EXPENSE_UPDATED)
     if trip is None:
         return
     await _send_expense_summary(ctx, trip.trip_id, expense_id)
@@ -310,9 +332,9 @@ async def _on_edit_expense_pick(ctx: CallbackContext, expense_id: str) -> None:
         )
         return
     await ctx.client.answer_callback_query(ctx.callback_query_id)
-    await ctx.client.send_message(
-        ctx.chat_id,
-        messages.EDIT_MENU_PROMPT,
+    await _edit_wizard_message(
+        ctx,
+        text=messages.EDIT_MENU_PROMPT,
         reply_markup=keyboards.edit_menu(expense_id),
     )
 

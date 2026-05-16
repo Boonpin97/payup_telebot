@@ -61,7 +61,7 @@ async def maybe_handle(ctx: CommandContext) -> bool:
         await sessions.end_input(ctx.chat_id, ctx.user_id)
         return True
 
-    await handler(ctx, expense_id, session.payload.get("source", SRC_EDIT))
+    await handler(ctx, session, expense_id, session.payload.get("source", SRC_EDIT))
     return True
 
 
@@ -79,21 +79,47 @@ async def _get_expense(ctx: CommandContext, expense_id: str):
     return trip, expense
 
 
-async def _post_edit_followup(ctx: CommandContext, expense_id: str, source: str) -> None:
-    """After a successful edit step, re-show the edit menu (if launched from edit)."""
-    if source != SRC_EDIT:
+async def _edit_session_message(
+    ctx: CommandContext,
+    session,
+    *,
+    text: str,
+    reply_markup: dict | None = None,
+    parse_mode: str | None = None,
+) -> None:
+    if session.callback_message_id is not None:
+        await ctx.client.edit_message_text(
+            ctx.chat_id,
+            session.callback_message_id,
+            text,
+            reply_markup=reply_markup,
+            parse_mode=parse_mode,
+        )
         return
     await ctx.client.send_message(
         ctx.chat_id,
-        messages.EDIT_MENU_PROMPT,
+        text,
+        reply_markup=reply_markup,
+        parse_mode=parse_mode,
+    )
+
+
+async def _post_edit_followup(ctx: CommandContext, session, expense_id: str, source: str) -> None:
+    """After a successful edit step, re-show the edit menu (if launched from edit)."""
+    if source != SRC_EDIT:
+        return
+    await _edit_session_message(
+        ctx,
+        session,
+        text=f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
         reply_markup=keyboards.edit_menu(expense_id),
     )
 
 
-async def _handle_edit_name(ctx: CommandContext, expense_id: str, source: str) -> None:
+async def _handle_edit_name(ctx: CommandContext, session, expense_id: str, source: str) -> None:
     new_name = ctx.raw_text.strip()
     if not new_name:
-        await ctx.client.send_message(ctx.chat_id, messages.EDIT_ASK_NAME)
+        await _edit_session_message(ctx, session, text=messages.EDIT_ASK_NAME)
         return
     trip, expense = await _get_expense(ctx, expense_id)
     if not expense:
@@ -102,14 +128,14 @@ async def _handle_edit_name(ctx: CommandContext, expense_id: str, source: str) -
     splits = await expense_repository.list_splits(ctx.chat_id, trip.trip_id, expense_id)
     await expense_repository.replace_splits(ctx.chat_id, trip.trip_id, expense, splits)
     await sessions.end_input(ctx.chat_id, ctx.user_id)
-    await _post_edit_followup(ctx, expense_id, source)
+    await _post_edit_followup(ctx, session, expense_id, source)
 
 
-async def _handle_edit_amount(ctx: CommandContext, expense_id: str, source: str) -> None:
+async def _handle_edit_amount(ctx: CommandContext, session, expense_id: str, source: str) -> None:
     try:
         new_amount = parse_money(ctx.raw_text)
     except ValueError:
-        await ctx.client.send_message(ctx.chat_id, messages.INVALID_AMOUNT)
+        await _edit_session_message(ctx, session, text=messages.INVALID_AMOUNT)
         return
     trip, expense = await _get_expense(ctx, expense_id)
     if not expense:
@@ -118,14 +144,14 @@ async def _handle_edit_amount(ctx: CommandContext, expense_id: str, source: str)
     # Recalculate as equal split when the amount changes.
     await expense_service.replace_split_equal(ctx.chat_id, trip.trip_id, expense)
     await sessions.end_input(ctx.chat_id, ctx.user_id)
-    await _post_edit_followup(ctx, expense_id, source)
+    await _post_edit_followup(ctx, session, expense_id, source)
 
 
-async def _handle_edit_people(ctx: CommandContext, expense_id: str, source: str) -> None:
+async def _handle_edit_people(ctx: CommandContext, session, expense_id: str, source: str) -> None:
     usernames = parse_usernames(ctx.raw_text)
     if not usernames:
-        await ctx.client.send_message(
-            ctx.chat_id, messages.EDIT_ASK_PEOPLE, parse_mode="Markdown"
+        await _edit_session_message(
+            ctx, session, text=messages.EDIT_ASK_PEOPLE, parse_mode="Markdown"
         )
         return
     trip, expense = await _get_expense(ctx, expense_id)
@@ -139,15 +165,15 @@ async def _handle_edit_people(ctx: CommandContext, expense_id: str, source: str)
     expense.participant_usernames = usernames
     await expense_service.replace_split_equal(ctx.chat_id, trip.trip_id, expense)
     await sessions.end_input(ctx.chat_id, ctx.user_id)
-    await _post_edit_followup(ctx, expense_id, source)
+    await _post_edit_followup(ctx, session, expense_id, source)
 
 
-async def _handle_split_amount(ctx: CommandContext, expense_id: str, source: str) -> None:
+async def _handle_split_amount(ctx: CommandContext, session, expense_id: str, source: str) -> None:
     try:
         pairs = parse_amount_split(ctx.raw_text)
     except ValueError:
-        await ctx.client.send_message(
-            ctx.chat_id, messages.PARTIAL_AMOUNT_PROMPT, parse_mode="Markdown"
+        await _edit_session_message(
+            ctx, session, text=messages.PARTIAL_AMOUNT_PROMPT, parse_mode="Markdown"
         )
         return
     trip, expense = await _get_expense(ctx, expense_id)
@@ -168,15 +194,15 @@ async def _handle_split_amount(ctx: CommandContext, expense_id: str, source: str
         await ctx.client.send_message(ctx.chat_id, str(exc))
         return
     await sessions.end_input(ctx.chat_id, ctx.user_id)
-    await _post_edit_followup(ctx, expense_id, source)
+    await _post_edit_followup(ctx, session, expense_id, source)
 
 
-async def _handle_split_percent(ctx: CommandContext, expense_id: str, source: str) -> None:
+async def _handle_split_percent(ctx: CommandContext, session, expense_id: str, source: str) -> None:
     try:
         pairs = parse_percentage_split(ctx.raw_text)
     except ValueError:
-        await ctx.client.send_message(
-            ctx.chat_id, messages.PARTIAL_PERCENT_PROMPT, parse_mode="Markdown"
+        await _edit_session_message(
+            ctx, session, text=messages.PARTIAL_PERCENT_PROMPT, parse_mode="Markdown"
         )
         return
     trip, expense = await _get_expense(ctx, expense_id)
@@ -197,4 +223,4 @@ async def _handle_split_percent(ctx: CommandContext, expense_id: str, source: st
         await ctx.client.send_message(ctx.chat_id, str(exc))
         return
     await sessions.end_input(ctx.chat_id, ctx.user_id)
-    await _post_edit_followup(ctx, expense_id, source)
+    await _post_edit_followup(ctx, session, expense_id, source)

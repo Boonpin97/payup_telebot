@@ -12,6 +12,7 @@ from app.telegram import messages
 from .conftest import (
     CHAT_ID,
     EXPENSE_ID,
+    TRIP_ID,
     USER_A_ID,
     USER_B_ID,
     USER_B_NAME,
@@ -243,3 +244,49 @@ async def test_split_percent_step_dispatches_correctly():
         await inputs.maybe_handle(ctx)
 
     mock_h.assert_called_once()
+
+
+async def test_edit_amount_invalid_input_edits_existing_prompt():
+    ctx = make_ctx(raw_text="not-a-number")
+    session = make_session("edit_expense", "edit_amount", payload={"expense_id": EXPENSE_ID})
+    session.callback_message_id = 77
+
+    await inputs._handle_edit_amount(ctx, session, EXPENSE_ID, "edit")
+
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        77,
+        messages.INVALID_AMOUNT,
+        reply_markup=None,
+        parse_mode=None,
+    )
+    ctx.client.send_message.assert_not_called()
+
+
+async def test_edit_name_success_reuses_existing_wizard_message():
+    ctx = make_ctx(raw_text="Dinner")
+    session = make_session("edit_expense", "edit_name", payload={"expense_id": EXPENSE_ID})
+    session.callback_message_id = 77
+
+    expense = type("Expense", (), {"expense_name": "Old", "is_deleted": False})()
+    trip = type("Trip", (), {"trip_id": TRIP_ID})()
+
+    with patch("app.commands.inputs.trip_service.get_active_trip", new_callable=AsyncMock) as mock_trip, \
+         patch("app.commands.inputs.expense_repository.get", new_callable=AsyncMock) as mock_get, \
+         patch("app.commands.inputs.expense_repository.list_splits", new_callable=AsyncMock) as mock_splits, \
+         patch("app.commands.inputs.expense_repository.replace_splits", new_callable=AsyncMock) as mock_replace, \
+         _patch_end():
+        mock_trip.return_value = trip
+        mock_get.return_value = expense
+        mock_splits.return_value = []
+
+        await inputs._handle_edit_name(ctx, session, EXPENSE_ID, "edit")
+
+    mock_replace.assert_called_once()
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        77,
+        f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
+        reply_markup=inputs.keyboards.edit_menu(EXPENSE_ID),
+        parse_mode=None,
+    )

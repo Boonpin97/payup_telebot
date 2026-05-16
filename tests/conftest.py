@@ -49,6 +49,7 @@ EXPENSE_ID = "exp-001"
 def make_client() -> MagicMock:
     client = MagicMock()
     client.send_message = AsyncMock(return_value={"message_id": 42})
+    client.edit_message_text = AsyncMock(return_value=None)
     client.answer_callback_query = AsyncMock(return_value=None)
     client.edit_message_reply_markup = AsyncMock(return_value=None)
     return client

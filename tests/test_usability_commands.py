@@ -61,6 +61,26 @@ class FakeTelegramClient:
         )
         return {}
 
+    async def edit_message_text(
+        self,
+        chat_id: int,
+        message_id: int,
+        text: str,
+        *,
+        reply_markup: Optional[dict] = None,
+        parse_mode: Optional[str] = None,
+    ) -> dict:
+        self.edits.append(
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+                "reply_markup": reply_markup,
+                "parse_mode": parse_mode,
+            }
+        )
+        return {}
+
     async def edit_message_reply_markup(
         self, chat_id: int, message_id: int, *, reply_markup: Optional[dict] = None
     ) -> dict:
@@ -156,8 +176,8 @@ async def test_cancel_with_no_session_replies_nothing_to_cancel(monkeypatch):
 async def test_cancelled_session_not_consumed_by_inputs_maybe_handle(monkeypatch):
     from app.commands import sessions
 
-    async def fake_get_alive(chat_id):
-        return None  # session has been ended
+    async def fake_get_alive(chat_id, user_id):
+        return None, False  # session has been ended
 
     monkeypatch.setattr(sessions, "get_alive_input", fake_get_alive)
 
@@ -394,9 +414,9 @@ async def test_edit_expense_pick_opens_edit_menu(monkeypatch):
     # Use a fresh "now" so the expiry check passes.
     await callbacks.handle(ctx, int(utcnow().timestamp()))
 
-    # First sent message should be the edit menu prompt.
-    assert any(s["text"] == "What else would you like to edit?" for s in client.sent)
-    edit_menu_msg = next(s for s in client.sent if s["reply_markup"])
+    assert client.edits, "expected picker message to be edited in place"
+    edit_menu_msg = client.edits[-1]
+    assert edit_menu_msg["text"] == "What else would you like to edit?"
     rows = edit_menu_msg["reply_markup"]["inline_keyboard"]
     # Existing edit menu has Name / Amount / People / Split Type / Done.
     flat = [b["text"] for row in rows for b in row]
@@ -416,8 +436,8 @@ async def test_edit_expense_pick_expired_message_uses_existing_expiry(monkeypatc
     last = client.callback_answers[-1]
     assert last["show_alert"] is True
     assert "expired" in (last["text"] or "").lower()
-    # No edit menu sent.
-    assert all(s["text"] != "What else would you like to edit?" for s in client.sent)
+    # No edit menu opened.
+    assert all(e.get("text") != "What else would you like to edit?" for e in client.edits)
 
 
 # --- /new_trip session is cancelled by /cancel ---------------------------
