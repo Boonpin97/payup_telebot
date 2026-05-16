@@ -68,7 +68,7 @@ def partial_split_menu(expense_id: str) -> dict:
             [
                 {"text": "Equal Split", "callback_data": f"{SPLIT_EQUAL}:{expense_id}"},
                 {"text": "Amount Split", "callback_data": f"{SPLIT_AMOUNT}:{expense_id}"},
-                {"text": "Percentage Split", "callback_data": f"{SPLIT_PERCENT}:{expense_id}"},
+                {"text": "% Split", "callback_data": f"{SPLIT_PERCENT}:{expense_id}"},
             ]
         ]
     }
