@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from ..repositories import expense_repository
+from ..repositories import expense_repository, member_repository
 from ..services import expense_service, trip_service
+from ..services.expense_service import ExpenseError
 from ..telegram import keyboards, messages
 from ..telegram.bot import TelegramAPIError
 from ..utils.money import fmt
@@ -60,6 +61,7 @@ async def handle(ctx: CallbackContext, message_date_unix: int) -> None:
         keyboards.SPLIT_PERCENT: _on_split_percent,
         keyboards.DELETE_PAYMENT_PICK: _on_delete_payment_pick,
         keyboards.EDIT_EXPENSE_PICK: _on_edit_expense_pick,
+        keyboards.SETTLE_PICK: _on_settle_pick,
         keyboards.SWITCH_TRIP_PICK: _on_switch_trip_pick,
         keyboards.DELETE_TRIP_PICK: _on_delete_trip_pick,
         keyboards.DELETE_TRIP_CONFIRM: _on_delete_trip_confirm,
@@ -239,6 +241,58 @@ async def _on_delete_payment_pick(ctx: CallbackContext, expense_id: str) -> None
     await ctx.client.send_message(
         ctx.chat_id,
         f"Expense deleted: {expense.expense_name} - {fmt(expense.amount)}",
+    )
+
+
+async def _on_settle_pick(ctx: CallbackContext, index_str: str) -> None:
+    try:
+        idx = int(index_str)
+    except ValueError:
+        await ctx.client.answer_callback_query(ctx.callback_query_id)
+        return
+
+    trip = await trip_service.get_active_trip(ctx.chat_id)
+    if trip is None:
+        await ctx.client.answer_callback_query(
+            ctx.callback_query_id, text=messages.NO_ACTIVE_TRIP, show_alert=True
+        )
+        return
+
+    # Recompute the current simplified debts so a stale button settles the
+    # *current* debt at that position (or the user gets a clear "gone").
+    summary = await expense_service.compute_summary(ctx.chat_id, trip.trip_id)
+    if idx < 0 or idx >= len(summary.settlements):
+        await ctx.client.answer_callback_query(
+            ctx.callback_query_id, text=messages.SETTLE_DEBT_GONE, show_alert=True
+        )
+        return
+
+    debtor, creditor, amount = summary.settlements[idx]
+
+    active_members = await member_repository.list_active(ctx.chat_id, trip.trip_id)
+    debtor_user_id = next(
+        (m.telegram_user_id for m in active_members if m.username == debtor), None
+    )
+
+    try:
+        await expense_service.add_settlement(
+            chat_id=ctx.chat_id,
+            trip_id=trip.trip_id,
+            group_id=trip.group_id,
+            payer_user_id=debtor_user_id,
+            payer_username=debtor,
+            recipient_username=creditor,
+            amount=amount,
+        )
+    except ExpenseError as exc:
+        await ctx.client.answer_callback_query(
+            ctx.callback_query_id, text=str(exc), show_alert=True
+        )
+        return
+
+    await ctx.client.answer_callback_query(ctx.callback_query_id)
+    await ctx.client.send_message(
+        ctx.chat_id, messages.settlement_recorded(debtor, creditor, amount)
     )
 
 

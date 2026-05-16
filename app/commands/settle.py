@@ -1,9 +1,17 @@
-"""``/settle`` command — record that one member paid another outside the app."""
+"""``/settle`` command — record that one member paid another outside the app.
+
+Two entry paths:
+  1. No args: show a button picker listing the simplified debts.
+     Tapping one settles that debt for its current amount.
+  2. Inline ``/settle @username amount``: settles a specific amount
+     between the sender and the target (useful for partial settlements
+     that don't match a simplified-debt row).
+"""
 from __future__ import annotations
 
 from ..services import expense_service, member_service, trip_service
 from ..services.expense_service import ExpenseError
-from ..telegram import messages
+from ..telegram import keyboards, messages
 from ..utils.parser import parse_settle
 from .context import CommandContext
 
@@ -18,7 +26,7 @@ async def handle(ctx: CommandContext) -> None:
         return
 
     if not ctx.args_text.strip():
-        await ctx.client.send_message(ctx.chat_id, messages.SETTLE_USAGE, parse_mode="Markdown")
+        await _show_picker(ctx)
         return
 
     try:
@@ -61,4 +69,26 @@ async def handle(ctx: CommandContext) -> None:
     await ctx.client.send_message(
         ctx.chat_id,
         messages.settlement_recorded(ctx.username, recipient_username, amount),
+    )
+
+
+async def _show_picker(ctx: CommandContext) -> None:
+    trip = await trip_service.get_active_trip(ctx.chat_id)
+    if trip is None:
+        await ctx.client.send_message(ctx.chat_id, messages.NO_ACTIVE_TRIP)
+        return
+
+    summary = await expense_service.compute_summary(ctx.chat_id, trip.trip_id)
+    if not summary.settlements:
+        await ctx.client.send_message(ctx.chat_id, messages.ALL_SETTLED)
+        return
+
+    labels = [
+        messages.settle_button_label(debtor, creditor, amount)
+        for debtor, creditor, amount in summary.settlements
+    ]
+    await ctx.client.send_message(
+        ctx.chat_id,
+        messages.PICK_DEBT_TO_SETTLE,
+        reply_markup=keyboards.settle_pick_keyboard(labels),
     )

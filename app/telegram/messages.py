@@ -293,6 +293,14 @@ SETTLE_USAGE = (
 
 SETTLE_SELF_ERROR = "You cannot settle with yourself."
 
+PICK_DEBT_TO_SETTLE = "Which debt has been settled?"
+ALL_SETTLED = "Everyone is settled."
+SETTLE_DEBT_GONE = "That debt no longer exists or has been settled."
+
+
+def settle_button_label(debtor: str, creditor: str, amount: Decimal) -> str:
+    return f"{display_username(debtor)} → {display_username(creditor)} {fmt(amount)}"
+
 NO_EXPENSES_IN_TRIP = (
     "No expenses in this trip yet.\n\n"
     "Add one with:\n/add_expense"

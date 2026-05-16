@@ -25,6 +25,7 @@ SPLIT_PERCENT = "split_percent"
 
 DELETE_PAYMENT_PICK = "delpay"      # delpay:<expense_id>
 EDIT_EXPENSE_PICK = "editexp"        # editexp:<expense_id>
+SETTLE_PICK = "stl"                  # stl:<index> (index into simplified settlements)
 SWITCH_TRIP_PICK = "switch"          # switch:<trip_id>
 DELETE_TRIP_PICK = "deltrip"         # deltrip:<trip_id>
 DELETE_TRIP_CONFIRM = "deltrip_yes"  # deltrip_yes:<trip_id>
@@ -93,6 +94,22 @@ def edit_expense_pick_keyboard(items: Iterable[tuple[str, str]]) -> dict:
     rows = [
         [{"text": label, "callback_data": f"{EDIT_EXPENSE_PICK}:{expense_id}"}]
         for label, expense_id in items
+    ]
+    return {"inline_keyboard": rows}
+
+
+def settle_pick_keyboard(labels: Iterable[str]) -> dict:
+    """Build a vertical list of buttons for /settle.
+
+    Each button's callback data carries only the index into the simplified
+    settlements list (e.g. ``stl:0``). The debtor/creditor/amount is
+    recomputed when the button is tapped so the displayed debts can be
+    longer than Telegram's 64-byte callback-data limit and so that stale
+    button presses settle the *current* corresponding debt.
+    """
+    rows = [
+        [{"text": label, "callback_data": f"{SETTLE_PICK}:{idx}"}]
+        for idx, label in enumerate(labels)
     ]
     return {"inline_keyboard": rows}
 
