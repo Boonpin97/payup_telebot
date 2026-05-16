@@ -19,7 +19,7 @@ from ..utils.parser import (
     parse_usernames,
 )
 from . import add_expense, members, new_trip, sessions
-from .callbacks import SRC_EDIT
+from .callbacks import SRC_DIRECT, SRC_EDIT
 from .context import CommandContext
 
 
@@ -105,15 +105,17 @@ async def _edit_session_message(
 
 
 async def _post_edit_followup(ctx: CommandContext, session, expense_id: str, source: str) -> None:
-    """After a successful edit step, re-show the edit menu (if launched from edit)."""
-    if source != SRC_EDIT:
+    """After a successful edit step, update the wizard message appropriately."""
+    if source == SRC_EDIT:
+        await _edit_session_message(
+            ctx,
+            session,
+            text=f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
+            reply_markup=keyboards.edit_menu(expense_id),
+        )
         return
-    await _edit_session_message(
-        ctx,
-        session,
-        text=f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
-        reply_markup=keyboards.edit_menu(expense_id),
-    )
+    if source == SRC_DIRECT:
+        await _edit_session_message(ctx, session, text=messages.EXPENSE_UPDATED)
 
 
 async def _handle_edit_name(ctx: CommandContext, session, expense_id: str, source: str) -> None:
@@ -187,11 +189,13 @@ async def _handle_split_amount(ctx: CommandContext, session, expense_id: str, so
     except ExpenseError as exc:
         if str(exc) == "amount_mismatch":
             actual = sum_money(a for _, a in user_amounts)
-            await ctx.client.send_message(
-                ctx.chat_id, messages.amount_split_mismatch(actual, expense.amount)
+            await _edit_session_message(
+                ctx,
+                session,
+                text=messages.amount_split_mismatch(actual, expense.amount),
             )
             return
-        await ctx.client.send_message(ctx.chat_id, str(exc))
+        await _edit_session_message(ctx, session, text=str(exc))
         return
     await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, session, expense_id, source)
@@ -216,11 +220,13 @@ async def _handle_split_percent(ctx: CommandContext, session, expense_id: str, s
     except ExpenseError as exc:
         if str(exc) == "percent_mismatch":
             total = sum((p.percent for p in pairs), Decimal(0))
-            await ctx.client.send_message(
-                ctx.chat_id, messages.percentage_split_mismatch(total)
+            await _edit_session_message(
+                ctx,
+                session,
+                text=messages.percentage_split_mismatch(total),
             )
             return
-        await ctx.client.send_message(ctx.chat_id, str(exc))
+        await _edit_session_message(ctx, session, text=str(exc))
         return
     await sessions.end_input(ctx.chat_id, ctx.user_id)
     await _post_edit_followup(ctx, session, expense_id, source)

@@ -1,6 +1,7 @@
 """Tests for inputs.maybe_handle: session routing, expiry, and user scoping."""
 from __future__ import annotations
 
+from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 
 from app.commands import add_expense, inputs, members, new_trip
@@ -288,5 +289,86 @@ async def test_edit_name_success_reuses_existing_wizard_message():
         77,
         f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
         reply_markup=inputs.keyboards.edit_menu(EXPENSE_ID),
+        parse_mode=None,
+    )
+
+
+async def test_split_amount_mismatch_edits_existing_prompt_instead_of_sending_new_message():
+    ctx = make_ctx(raw_text="@alice 10 @bob 20")
+    session = make_session("edit_expense", "split_amount", payload={"expense_id": EXPENSE_ID})
+    session.callback_message_id = 77
+
+    expense = type("Expense", (), {"amount": Decimal("200.00"), "is_deleted": False})()
+    trip = type("Trip", (), {"trip_id": TRIP_ID})()
+
+    with patch("app.commands.inputs.trip_service.get_active_trip", new_callable=AsyncMock) as mock_trip, \
+         patch("app.commands.inputs.expense_repository.get", new_callable=AsyncMock) as mock_get, \
+         patch("app.commands.inputs.expense_service.replace_split_amounts", new_callable=AsyncMock) as mock_replace:
+        mock_trip.return_value = trip
+        mock_get.return_value = expense
+        mock_replace.side_effect = inputs.ExpenseError("amount_mismatch")
+
+        await inputs._handle_split_amount(ctx, session, EXPENSE_ID, "direct")
+
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        77,
+        messages.amount_split_mismatch(Decimal("30.00"), Decimal("200.00")),
+        reply_markup=None,
+        parse_mode=None,
+    )
+    ctx.client.send_message.assert_not_called()
+
+
+async def test_split_amount_success_in_edit_flow_returns_to_edit_menu():
+    ctx = make_ctx(raw_text="@alice 120 @bob 80")
+    session = make_session("edit_expense", "split_amount", payload={"expense_id": EXPENSE_ID})
+    session.callback_message_id = 77
+
+    expense = type("Expense", (), {"amount": Decimal("200.00"), "is_deleted": False})()
+    trip = type("Trip", (), {"trip_id": TRIP_ID})()
+
+    with patch("app.commands.inputs.trip_service.get_active_trip", new_callable=AsyncMock) as mock_trip, \
+         patch("app.commands.inputs.expense_repository.get", new_callable=AsyncMock) as mock_get, \
+         patch("app.commands.inputs.expense_service.replace_split_amounts", new_callable=AsyncMock) as mock_replace, \
+         _patch_end():
+        mock_trip.return_value = trip
+        mock_get.return_value = expense
+
+        await inputs._handle_split_amount(ctx, session, EXPENSE_ID, "edit")
+
+    mock_replace.assert_called_once()
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        77,
+        f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
+        reply_markup=inputs.keyboards.edit_menu(EXPENSE_ID),
+        parse_mode=None,
+    )
+
+
+async def test_split_amount_success_in_direct_flow_edits_existing_prompt_with_success():
+    ctx = make_ctx(raw_text="@alice 120 @bob 80")
+    session = make_session("edit_expense", "split_amount", payload={"expense_id": EXPENSE_ID})
+    session.callback_message_id = 77
+
+    expense = type("Expense", (), {"amount": Decimal("200.00"), "is_deleted": False})()
+    trip = type("Trip", (), {"trip_id": TRIP_ID})()
+
+    with patch("app.commands.inputs.trip_service.get_active_trip", new_callable=AsyncMock) as mock_trip, \
+         patch("app.commands.inputs.expense_repository.get", new_callable=AsyncMock) as mock_get, \
+         patch("app.commands.inputs.expense_service.replace_split_amounts", new_callable=AsyncMock) as mock_replace, \
+         _patch_end():
+        mock_trip.return_value = trip
+        mock_get.return_value = expense
+
+        await inputs._handle_split_amount(ctx, session, EXPENSE_ID, "direct")
+
+    mock_replace.assert_called_once()
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        77,
+        messages.EXPENSE_UPDATED,
+        reply_markup=None,
         parse_mode=None,
     )

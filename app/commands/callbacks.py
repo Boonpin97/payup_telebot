@@ -81,6 +81,9 @@ async def handle(ctx: CallbackContext, message_date_unix: int) -> None:
         keyboards.SPLIT_EQUAL: _on_split_equal,
         keyboards.SPLIT_AMOUNT: _on_split_amount,
         keyboards.SPLIT_PERCENT: _on_split_percent,
+        keyboards.EDIT_SPLIT_EQUAL: _on_edit_split_equal,
+        keyboards.EDIT_SPLIT_AMOUNT: _on_edit_split_amount,
+        keyboards.EDIT_SPLIT_PERCENT: _on_edit_split_percent,
         keyboards.DELETE_PAYMENT_PICK: _on_delete_payment_pick,
         keyboards.EDIT_EXPENSE_PICK: _on_edit_expense_pick,
         keyboards.SETTLE_PICK: _on_settle_pick,
@@ -126,7 +129,7 @@ async def _on_expense_partial(ctx: CallbackContext, expense_id: str) -> None:
     await _edit_wizard_message(
         ctx,
         text="Choose a split type:",
-        reply_markup=keyboards.partial_split_menu(expense_id),
+        reply_markup=keyboards.partial_split_menu(expense_id, source="direct"),
     )
 
 
@@ -183,7 +186,7 @@ async def _on_edit_partial(ctx: CallbackContext, expense_id: str) -> None:
     await _edit_wizard_message(
         ctx,
         text="Choose a split type:",
-        reply_markup=keyboards.partial_split_menu(expense_id),
+        reply_markup=keyboards.partial_split_menu(expense_id, source="edit"),
     )
 
 
@@ -200,6 +203,14 @@ async def _on_edit_done(ctx: CallbackContext, expense_id: str) -> None:
 
 
 async def _on_split_equal(ctx: CallbackContext, expense_id: str) -> None:
+    await _apply_equal_split(ctx, expense_id, source=SRC_DIRECT)
+
+
+async def _on_edit_split_equal(ctx: CallbackContext, expense_id: str) -> None:
+    await _apply_equal_split(ctx, expense_id, source=SRC_EDIT)
+
+
+async def _apply_equal_split(ctx: CallbackContext, expense_id: str, *, source: str) -> None:
     trip = await trip_service.get_active_trip(ctx.chat_id)
     if trip is None:
         await ctx.client.answer_callback_query(
@@ -215,29 +226,56 @@ async def _on_split_equal(ctx: CallbackContext, expense_id: str) -> None:
     splits = await expense_service.replace_split_equal(ctx.chat_id, trip.trip_id, expense)
     per_person = splits[0].amount_owed if splits else expense.amount
     await ctx.client.answer_callback_query(ctx.callback_query_id)
-    await ctx.client.send_message(ctx.chat_id, messages.equal_split_done(per_person))
+    if source == SRC_EDIT:
+        await _edit_wizard_message(
+            ctx,
+            text=f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
+            reply_markup=keyboards.edit_menu(expense_id),
+        )
+        return
+    await _edit_wizard_message(ctx, text=messages.equal_split_done(per_person))
 
 
 async def _on_split_amount(ctx: CallbackContext, expense_id: str) -> None:
+    await _start_split_amount_input(ctx, expense_id=expense_id, source=SRC_DIRECT)
+
+
+async def _on_edit_split_amount(ctx: CallbackContext, expense_id: str) -> None:
+    await _start_split_amount_input(ctx, expense_id=expense_id, source=SRC_EDIT)
+
+
+async def _start_split_amount_input(
+    ctx: CallbackContext, *, expense_id: str, source: str
+) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
     await _start_text_input(
         ctx,
         expense_id=expense_id,
         kind="split_amount",
         prompt=messages.PARTIAL_AMOUNT_PROMPT,
-        source=SRC_DIRECT,
+        source=source,
         parse_mode="Markdown",
     )
 
 
 async def _on_split_percent(ctx: CallbackContext, expense_id: str) -> None:
+    await _start_split_percent_input(ctx, expense_id=expense_id, source=SRC_DIRECT)
+
+
+async def _on_edit_split_percent(ctx: CallbackContext, expense_id: str) -> None:
+    await _start_split_percent_input(ctx, expense_id=expense_id, source=SRC_EDIT)
+
+
+async def _start_split_percent_input(
+    ctx: CallbackContext, *, expense_id: str, source: str
+) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
     await _start_text_input(
         ctx,
         expense_id=expense_id,
         kind="split_percent",
         prompt=messages.PARTIAL_PERCENT_PROMPT,
-        source=SRC_DIRECT,
+        source=source,
         parse_mode="Markdown",
     )
 

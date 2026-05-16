@@ -22,6 +22,9 @@ EDIT_DONE = "edit_done"
 SPLIT_EQUAL = "split_equal"
 SPLIT_AMOUNT = "split_amount"
 SPLIT_PERCENT = "split_percent"
+EDIT_SPLIT_EQUAL = "edit_split_equal"
+EDIT_SPLIT_AMOUNT = "edit_split_amount"
+EDIT_SPLIT_PERCENT = "edit_split_percent"
 
 DELETE_PAYMENT_PICK = "delpay"      # delpay:<expense_id>
 EDIT_EXPENSE_PICK = "editexp"        # editexp:<expense_id>
@@ -62,13 +65,21 @@ def edit_menu(expense_id: str) -> dict:
     }
 
 
-def partial_split_menu(expense_id: str) -> dict:
+def partial_split_menu(expense_id: str, *, source: str = "direct") -> dict:
+    if source == "edit":
+        equal_action = EDIT_SPLIT_EQUAL
+        amount_action = EDIT_SPLIT_AMOUNT
+        percent_action = EDIT_SPLIT_PERCENT
+    else:
+        equal_action = SPLIT_EQUAL
+        amount_action = SPLIT_AMOUNT
+        percent_action = SPLIT_PERCENT
     return {
         "inline_keyboard": [
             [
-                {"text": "Equal Split", "callback_data": f"{SPLIT_EQUAL}:{expense_id}"},
-                {"text": "Amount Split", "callback_data": f"{SPLIT_AMOUNT}:{expense_id}"},
-                {"text": "% Split", "callback_data": f"{SPLIT_PERCENT}:{expense_id}"},
+                {"text": "Equal Split", "callback_data": f"{equal_action}:{expense_id}"},
+                {"text": "Amount Split", "callback_data": f"{amount_action}:{expense_id}"},
+                {"text": "% Split", "callback_data": f"{percent_action}:{expense_id}"},
             ]
         ]
     }

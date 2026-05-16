@@ -264,7 +264,13 @@ async def test_split_equal_updates_expense():
         await callbacks.handle(ctx, _recent_unix())
 
     mock_split.assert_called_once()
-    ctx.client.send_message.assert_called_once()
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.equal_split_done(Decimal("5.00")),
+        reply_markup=None,
+        parse_mode=None,
+    )
 
 
 async def test_expense_partial_edits_message_to_split_type_menu():
@@ -277,7 +283,7 @@ async def test_expense_partial_edits_message_to_split_type_menu():
         CHAT_ID,
         ctx.message_id,
         "Choose a split type:",
-        reply_markup=keyboards.partial_split_menu(EXPENSE_ID),
+        reply_markup=keyboards.partial_split_menu(EXPENSE_ID, source="direct"),
         parse_mode=None,
     )
 
@@ -292,7 +298,31 @@ async def test_edit_partial_edits_message_to_split_type_menu():
         CHAT_ID,
         ctx.message_id,
         "Choose a split type:",
-        reply_markup=keyboards.partial_split_menu(EXPENSE_ID),
+        reply_markup=keyboards.partial_split_menu(EXPENSE_ID, source="edit"),
+        parse_mode=None,
+    )
+
+
+async def test_edit_split_equal_returns_to_edit_menu():
+    ctx = make_callback_ctx(data=f"{keyboards.EDIT_SPLIT_EQUAL}:{EXPENSE_ID}")
+    trip = make_trip()
+    expense = make_expense(participants=["alice", "bob"])
+    split = make_split("alice", "5.00")
+
+    with _patch_trip() as mock_trip, \
+         _patch_expense_get() as mock_get, \
+         patch("app.services.expense_service.replace_split_equal", new_callable=AsyncMock) as mock_split:
+        mock_trip.return_value = trip
+        mock_get.return_value = expense
+        mock_split.return_value = [split, make_split("bob", "5.00")]
+        await callbacks.handle(ctx, _recent_unix())
+
+    mock_split.assert_called_once()
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        f"{messages.EXPENSE_UPDATED}\n\n{messages.EDIT_MENU_PROMPT}",
+        reply_markup=keyboards.edit_menu(EXPENSE_ID),
         parse_mode=None,
     )
 
@@ -390,6 +420,27 @@ async def test_split_amount_starts_session_with_src_direct():
     )
 
 
+async def test_edit_split_amount_starts_session_with_src_edit():
+    ctx = make_callback_ctx(data=f"{keyboards.EDIT_SPLIT_AMOUNT}:{EXPENSE_ID}")
+    captured: list[dict] = []
+
+    async def capture(**kwargs):
+        captured.append(kwargs)
+        return make_session("edit_expense", "split_amount")
+
+    with patch("app.services.session_service.create", side_effect=capture):
+        await callbacks.handle(ctx, _recent_unix())
+
+    assert captured[0]["payload"]["source"] == SRC_EDIT
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.PARTIAL_AMOUNT_PROMPT,
+        reply_markup=None,
+        parse_mode="Markdown",
+    )
+
+
 async def test_split_percent_starts_session_with_src_direct():
     ctx = make_callback_ctx(data=f"{keyboards.SPLIT_PERCENT}:{EXPENSE_ID}")
     captured: list[dict] = []
@@ -402,6 +453,27 @@ async def test_split_percent_starts_session_with_src_direct():
         await callbacks.handle(ctx, _recent_unix())
 
     assert captured[0]["payload"]["source"] == SRC_DIRECT
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        messages.PARTIAL_PERCENT_PROMPT,
+        reply_markup=None,
+        parse_mode="Markdown",
+    )
+
+
+async def test_edit_split_percent_starts_session_with_src_edit():
+    ctx = make_callback_ctx(data=f"{keyboards.EDIT_SPLIT_PERCENT}:{EXPENSE_ID}")
+    captured: list[dict] = []
+
+    async def capture(**kwargs):
+        captured.append(kwargs)
+        return make_session("edit_expense", "split_percent")
+
+    with patch("app.services.session_service.create", side_effect=capture):
+        await callbacks.handle(ctx, _recent_unix())
+
+    assert captured[0]["payload"]["source"] == SRC_EDIT
     ctx.client.edit_message_text.assert_called_once_with(
         CHAT_ID,
         ctx.message_id,
