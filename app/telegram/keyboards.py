@@ -52,7 +52,7 @@ def edit_menu(expense_id: str) -> dict:
             ],
             [
                 {"text": "People", "callback_data": f"{EDIT_PEOPLE}:{expense_id}"},
-                {"text": "Partial Payment", "callback_data": f"{EDIT_PARTIAL}:{expense_id}"},
+                {"text": "Split Type", "callback_data": f"{EDIT_PARTIAL}:{expense_id}"},
             ],
             [
                 {"text": "Done", "callback_data": f"{EDIT_DONE}:{expense_id}"},

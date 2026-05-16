@@ -398,7 +398,7 @@ async def test_edit_expense_pick_opens_edit_menu(monkeypatch):
     assert any(s["text"] == "What else would you like to edit?" for s in client.sent)
     edit_menu_msg = next(s for s in client.sent if s["reply_markup"])
     rows = edit_menu_msg["reply_markup"]["inline_keyboard"]
-    # Existing edit menu has Name / Amount / People / Partial Payment / Done.
+    # Existing edit menu has Name / Amount / People / Split Type / Done.
     flat = [b["text"] for row in rows for b in row]
     assert "Name" in flat and "Amount" in flat and "People" in flat and "Done" in flat
 
