@@ -125,7 +125,7 @@ async def _on_expense_partial(ctx: CallbackContext, expense_id: str) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
     await _edit_wizard_message(
         ctx,
-        "Choose a split type:",
+        text="Choose a split type:",
         reply_markup=keyboards.partial_split_menu(expense_id),
     )
 
@@ -182,7 +182,7 @@ async def _on_edit_partial(ctx: CallbackContext, expense_id: str) -> None:
     await ctx.client.answer_callback_query(ctx.callback_query_id)
     await _edit_wizard_message(
         ctx,
-        "Choose a split type:",
+        text="Choose a split type:",
         reply_markup=keyboards.partial_split_menu(expense_id),
     )
 

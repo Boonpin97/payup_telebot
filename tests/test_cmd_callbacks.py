@@ -267,6 +267,36 @@ async def test_split_equal_updates_expense():
     ctx.client.send_message.assert_called_once()
 
 
+async def test_expense_partial_edits_message_to_split_type_menu():
+    ctx = make_callback_ctx(data=f"{keyboards.EXPENSE_PARTIAL}:{EXPENSE_ID}")
+
+    await callbacks.handle(ctx, _recent_unix())
+
+    ctx.client.answer_callback_query.assert_called_once_with(ctx.callback_query_id)
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        "Choose a split type:",
+        reply_markup=keyboards.partial_split_menu(EXPENSE_ID),
+        parse_mode=None,
+    )
+
+
+async def test_edit_partial_edits_message_to_split_type_menu():
+    ctx = make_callback_ctx(data=f"{keyboards.EDIT_PARTIAL}:{EXPENSE_ID}")
+
+    await callbacks.handle(ctx, _recent_unix())
+
+    ctx.client.answer_callback_query.assert_called_once_with(ctx.callback_query_id)
+    ctx.client.edit_message_text.assert_called_once_with(
+        CHAT_ID,
+        ctx.message_id,
+        "Choose a split type:",
+        reply_markup=keyboards.partial_split_menu(EXPENSE_ID),
+        parse_mode=None,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Edit menu — start text-input sessions
 # ---------------------------------------------------------------------------
