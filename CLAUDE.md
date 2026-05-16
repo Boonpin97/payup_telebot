@@ -35,7 +35,6 @@ The backend runs in Docker and is deployed to Google Cloud Run.
 - /new_trip — create a new trip (multi-step: name, then members)
 - /add_expense — add an expense; payer is always the sender; split participants are @usernames after the amount (or all members if omitted)
 - /summary — show totals, per-member balances, and suggested settlements
-- /list_expenses — list all active expenses for the current trip with total spent (settlements excluded from total)
 - /settle — record a direct payment from one member to another (`/settle @username amount`)
 - /delete_payment — soft-delete an expense by number
 - /add_members — add @usernames to the active trip
