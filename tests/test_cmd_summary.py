@@ -79,6 +79,8 @@ async def test_handle_populated_trip_sends_balances_and_settlements():
     assert "@alice spent 15.00" in text
     assert "@bob spent 15.00" in text
     assert "Net Balance:" not in text
+    assert "Members:" not in text
+    assert text.index("Spent:") < text.index("Paid:")
 
 
 async def test_handle_everyone_settled_shows_settled_message():
@@ -135,3 +137,5 @@ async def test_handle_shows_each_persons_total_trip_spend():
     assert "@alice spent 100.00" in text
     assert "@bob spent 200.00" in text
     assert "Net Balance:" not in text
+    assert "Members:" not in text
+    assert text.index("Spent:") < text.index("Paid:")

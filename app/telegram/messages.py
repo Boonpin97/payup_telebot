@@ -217,7 +217,6 @@ def trip_summary(
     net_balance: dict[str, Decimal],
     settlements: list[tuple[str, str, Decimal]],
 ) -> str:
-    member_lines = "\n".join(display_username(m) for m in members) or "(none)"
     paid_lines = (
         "\n".join(
             f"{display_username(u)} paid {fmt(paid_by.get(u, Decimal(0)))}"
@@ -243,10 +242,9 @@ def trip_summary(
 
     return (
         f"Trip Summary: {trip_name}\n\n"
-        f"Members:\n{member_lines}\n\n"
         f"Total spent: {fmt(total_spent)}\n\n"
-        f"Paid:\n{paid_lines}\n\n"
         f"Spent:\n{spent_lines}\n\n"
+        f"Paid:\n{paid_lines}\n\n"
         f"Simplified Settlement:\n{settle_lines}"
     )
 
